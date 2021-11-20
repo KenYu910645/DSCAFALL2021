@@ -15,7 +15,7 @@ bool DEBUG = false;
 int N_FORMULAR = 0;
 double ETA = 1e-10; //  Can't smaller than 2.220446049 * 10^-16
 double SLOPE_DUMMY = 1e-15; // to avoid inf slope
-string INPUT_FILE = "2DLP/2.in";
+string INPUT_FILE = "2DLP/fuck.in";
 vector<vector<int>> FORMULARS;
 string ANS = "";
 
@@ -206,7 +206,6 @@ int main(void){
             else{ //fm.b == 0
                 // I_0.push_back(fm);
                 cout << "This is impossible. SLOPE_DUMMY didn't do its job." << endl;
-                break;
             }
         }
         vector<vector<Formular>> I_group;// [I_a, I_m, I_0]
@@ -248,7 +247,6 @@ int main(void){
                     }
                     else{ // I_0, the line is facing left.
                         cout << "This is impossible. SLOPE_DUMMY didn't do its job." << endl;
-                        break;
                     }
                 }
                 else{
@@ -351,12 +349,15 @@ int main(void){
 
 
             string direction = "None";
+            //Case 1:
             if      ( (alpha_y <= beta_y) and (s_min <= s_max) and (sign(s_max) == -1) ){
                 direction = "xm<x*";
             }
+            //Case 2:
             else if ( (alpha_y <= beta_y) and (s_max >= s_min) and (sign(s_min) == 1) ){
                 direction = "x*<xm";
             }
+            //Case 3:
             else if ( (alpha_y <= beta_y) and (sign(s_min) <= 0) and (sign(s_max) >= 0) ){
                 direction = "xm=x*";
             }
@@ -373,7 +374,8 @@ int main(void){
                 direction = "NA";
             }
             else{
-                cout << "direction is not define, something wrong happend" << endl; 
+                // cout << "direction is not define, something wrong happend" << endl; // TODO 
+                ANS = "-INF";
             }
             if (DEBUG)
                 cout << "direction = " << direction << endl;
@@ -473,6 +475,9 @@ int main(void){
             if (slope == 0 and f.b <= 0){ // If this is a horizontal line and face up // TODO equal to 0???
                 ANS = to_string(-f.c/double(f.b));
             }
+            else{
+                ANS = "-INF";
+            }
         }
         else if (I_a.size() == 1 and I_m.size() == 1){
             Formular f1 = I_a[0]; // face down
@@ -519,13 +524,10 @@ int main(void){
             cout << "Round ANS = " << round(stof(ANS)) << endl;
     }
     else{
-        if (ANS == "NA"){
-            cout << ANS << flush;
-        }
-        else{
-            cout << round(stof(ANS)) << flush;
-        }
-
+        if (ANS == "NA" or ANS == "-INF")
+            cout << ANS << endl;
+        else
+            cout << round(stof(ANS)) << endl;
     }
     return 0;
 }
