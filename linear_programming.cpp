@@ -519,10 +519,13 @@ int main(void){
             cout << "Round ANS = " << round(stof(ANS)) << endl;
     }
     else{
-        if (ANS == "NA")
-            cout << ANS << endl;
-        else
-            cout << round(stof(ANS)) << endl;
+        if (ANS == "NA"){
+            cout << ANS << flush;
+        }
+        else{
+            cout << round(stof(ANS)) << flush;
+        }
+
     }
     return 0;
 }
