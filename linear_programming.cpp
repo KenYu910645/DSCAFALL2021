@@ -346,8 +346,6 @@ int main(void){
                 cout << "(s_min, s_max) = (" << s_min << ", " << s_max << ')' << endl;
                 cout << "(t_min, t_max) = (" << t_min << ", " << t_max << ')' << endl;
             }
-
-
             string direction = "None";
             //Case 1:
             if      ( (alpha_y <= beta_y) and (s_min <= s_max) and (sign(s_max) == -1) ){
@@ -374,7 +372,8 @@ int main(void){
                 direction = "NA";
             }
             else{
-                // cout << "direction is not define, something wrong happend" << endl; // TODO 
+                if (DEBUG)
+                    cout << "direction is not define, something wrong happend" << endl; // TODO, fuck.in
                 ANS = "-INF";
             }
             if (DEBUG)
@@ -384,7 +383,7 @@ int main(void){
             /************************************/
             
             if (direction == "xm=x*"){
-                ANS = to_string(median.y);
+                ANS = to_string( int(round(median.y)) );
             }
             else if (direction == "NA"){
                 ANS = "NA";
@@ -473,7 +472,7 @@ int main(void){
                           double(FORMULARS[0][2]), -1};
             double slope = -f.a/double(f.b);
             if (slope == 0 and f.b <= 0){ // If this is a horizontal line and face up // TODO equal to 0???
-                ANS = to_string(-f.c/double(f.b));
+                ANS = to_string( int(round(-f.c/double(f.b))) );
             }
             else{
                 ANS = "-INF";
@@ -482,33 +481,81 @@ int main(void){
         else if (I_a.size() == 1 and I_m.size() == 1){
             Formular f1 = I_a[0]; // face down
             Formular f2 = I_m[0]; // face up
-            double x = (f1.b*f2.c - f2.b*f1.c) / double(f1.a*f2.b - f2.a*f1.b);
-            double y = (f1.c*f2.a - f2.c*f1.a) / double(f1.a*f2.b - f2.a*f1.b);
+            double x = (f1.b*f2.c - f2.b*f1.c) / (f1.a*f2.b - f2.a*f1.b);
+            double y = (f1.c*f2.a - f2.c*f1.a) / (f1.a*f2.b - f2.a*f1.b);
             Intersection inter = {x, y, f1, f2, -1};
             // Deal with parallel lines
-            if (double(f1.a*f2.b - f2.a*f1.b) == 0.0){
-                cout << "Paralled at base case. I'm not even sure this is possible at all!" << endl;
-                ANS = "NA";
+            
+            if ((f1.a*f2.b - f2.a*f1.b) == 0.0){
+                if ( (-f1.c/f1.b) >= (-f2.c/f2.b) )
+                    ANS = "-INF";
+                else
+                    ANS = "NA";
             }
             else{
                 Formular real_lower_bound;
-                if (which_line_prune(inter, 1, true) == f1.idx) // feasible region is on RHS
-                    real_lower_bound = f1;
-                else // feasible region is on LHS
-                    real_lower_bound = f2;
-                float real_lower_bound_slope = -real_lower_bound.a/double(real_lower_bound.b);
+                string tmp1 = "";
+                string tmp2 = "";
+                if (f1.b == SLOPE_DUMMY){
+                    if (f1.a > 0)
+                        tmp1 = "LHS";
+                    else
+                        tmp1 = "RHS";
+                }
+                if (f2.b == SLOPE_DUMMY){
+                    if (f2.a > 0)
+                        tmp2 = "LHS";
+                    else
+                        tmp2 = "RHS";
+                }
                 
+                if ( (tmp1 == "RHS" and tmp2 == "LHS") or (tmp1 == "LHS" and tmp2 == "RHS") ){
+                    ANS = "NA";
+                    return 0;
+                }
+                else if (tmp1 == "RHS" or tmp2 == "RHS"){
+                    real_lower_bound = f1;
+                }
+                else if (tmp1 == "LHS" or tmp2 == "LHS"){
+                    real_lower_bound = f2;
+                }
+                else
+                {
+                    if (which_line_prune(inter, 1, true) == f1.idx) // feasible region is on RHS
+                    {
+                        //cout << "RHS" << endl;
+                        real_lower_bound = f1;
+                    }
+                    else // feasible region is on LHS
+                    {
+                        //cout << "LHS" << endl;
+                        real_lower_bound = f2;
+                    }
+                }
+
+                float real_lower_bound_slope = -1*(real_lower_bound.a/real_lower_bound.b);
                 if (real_lower_bound.idx == f1.idx){ //RHS
                     if (real_lower_bound_slope < 0)
+                    {
                         ANS = "-INF";
+                    }
+                    else if (real_lower_bound_slope >= 1e+14){
+                        ANS = "-INF";
+                    }
                     else
-                        ANS = to_string(inter.y);
+                    {
+                        ANS = to_string(int(round(inter.y)));
+                    }
                 }
                 else{ // LHS
+                    // cout << "real_lower_bound_slope" << real_lower_bound_slope << endl;
                     if (real_lower_bound_slope > 0)
                         ANS = "-INF";
+                    else if  (real_lower_bound_slope <= -1e+14){
+                        ANS = "-INF";
+                    }
                     else
-                        ANS = to_string(inter.y);
+                        ANS = to_string(int(round(inter.y)));
                 }
             }
         }
@@ -516,18 +563,6 @@ int main(void){
             ANS = "-INF"; // FORMULARS.size() == 0
     }
     
-    if (DEBUG){
-        cout << "ANS = " << ANS << endl;
-        if (ANS == "NA")
-            cout << "Round ANS = " << ANS << endl;
-        else
-            cout << "Round ANS = " << round(stof(ANS)) << endl;
-    }
-    else{
-        if (ANS == "NA" or ANS == "-INF")
-            cout << ANS << endl;
-        else
-            cout << round(stof(ANS)) << endl;
-    }
+    cout << ANS << endl;   
     return 0;
 }
