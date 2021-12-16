@@ -2,102 +2,100 @@ import math
 import os
 import fileinput
 from queue import PriorityQueue
+from collections import namedtuple
+import time 
 
-C = 0# Capcity
+C = 0 # Capcity
 N_OBJ = 0 # Number of object
 LOWER_BOUND = -1
 OBJS = []
-CP_OBJS = []
 PQ = PriorityQueue()
 DEBUG = False
 
-def get_ub(decision):
-    #  deduce already used obj weight and add value
-    cap = C
-    val = 0
-    for i, taken in enumerate(decision):
-        if taken == 1: # It DID take this obj.
-            val += OBJS[i][0]
-            cap -= OBJS[i][1]
-
-    # Calcualte fraction knapsnack problem
-    idx = 0
-    while(cap > 0 and len(CP_OBJS) > idx ): # TODO, asssume all objects have weight greate than zero
-        # if already have this decision
-        if (CP_OBJS[idx][0] >= len(decision)):
-            _,v,w,_ = CP_OBJS[idx]
-            if cap >= w: # Can't take all object
-                val += v
-                cap -= w
-            else: # Can only take partial of object
-                val += (cap/w)*v
+def get_ub(node):
+    v_frac = 0
+    c_frac = C - node.w # Remaid capacity
+    for i in range(node.level+1, N_OBJ):
+        if c_frac >= OBJS[i].w: # Can take this obj all
+            c_frac -= OBJS[i].w
+            v_frac += OBJS[i].v
+            if c_frac == 0:
                 break
-        idx += 1
-    return val
+        else: # Can only take fraction of the obj
+            v_frac += OBJS[i].v*c_frac/OBJS[i].w
+            break
+    return node.v + v_frac
 
-def get_lb(decision):
-    sum_value = 0
-    for i, d in enumerate(decision):
-        if d == 1:
-            sum_value += OBJS[i][0]
-    return sum_value
+class Node():
+    def __init__(self, level, ub, v, w):
+        self.level = level
+        self.ub = ub
+        self.v = v
+        self.w = w
+    def __lt__(self, other): # Define node < node
+        return (self.ub < other.ub)
 
-def is_feasible(decision):
-    sum_weight = 0
-    for i, d in enumerate(decision):
-        if d == 1:
-            sum_weight += OBJS[i][1]
+Obj = namedtuple('Obj', 'v, w')
 
-    if sum_weight > C:
-        return False
-    else:
-        return True
+def fathom(parent):
+    # Take the object!!! (l_node)
+    l_node = Node(parent.level+1,
+             None,
+             parent.v + OBJS[parent.level+1].v,
+             parent.w + OBJS[parent.level+1].w)
+    l_node.ub = get_ub(l_node)
+
+    # Don't take the object!!! (r_node)
+    r_node = Node(parent.level+1,
+             None,
+             parent.v,
+             parent.w)
+    r_node.ub = get_ub(r_node)
+
+    return l_node, r_node
 
 if __name__ == "__main__":
+    t_start = time.time()
     for i, line in enumerate(fileinput.input()):
         if i == 0:
             C, N_OBJ = [int(num) for num in line.split()]
         else:
-            OBJS.append(tuple( [int(num) for num in line.split()] ))
+            v_str, w_str = line.split()
+            OBJS.append(Obj(int(v_str), int(w_str)))
+    # Sort by cp value
+    OBJS.sort(key = lambda x: x.v/x.w, reverse=True)
+    # if DEBUG:
+    #     print(f"OBJS = {OBJS}")
     
-    # Get CP value order
-    for i in range(N_OBJ):
-        CP_OBJS.append( (i, OBJS[i][0], OBJS[i][1], OBJS[i][0] / OBJS[i][1]) ) # (index, value, weight, cp_value)
-    CP_OBJS.sort(key = lambda x: x[3], reverse=True)
-    # print(f"CP_OBJS = {CP_OBJS}")
-    
-    # print (f"get_ub([0]) = {get_ub([0])}")
-    # print (f"get_ub([1]) = {get_ub([1])}")
-    
-    PQ.put( (-get_ub([0]), [0]) ) # minus sign to have max queue
-    PQ.put( (-get_ub([1]), [1]) )
+    PQ.put( Node(-1, -9999999999, 0, 0) )
     while not PQ.empty():
-        n_fathom = PQ.get()
-        n_fathom = (-n_fathom[0], n_fathom[1])# Reverse the ub's sign 
-
+        node = PQ.get()
+        node.ub = -node.ub # Reverse sign
+        
         # Check if this node worth to fathom
-        if LOWER_BOUND >= n_fathom[0]: # TODO equal to get all the leafs
+        if LOWER_BOUND >= node.ub: # TODO equal to get all the leafs
             continue
-        
-        if DEBUG:
-            print("n_fathom = " + str(n_fathom))
+        # if DEBUG:
+        #     print(f"node_fathom: level={node.level}, ub={node.ub}, v={node.v}, w={node.w}")
 
-        l_decision = n_fathom[1] + [0]
-        r_decision = n_fathom[1] + [1]
+        l_node, r_node = fathom(node)
+        # if DEBUG:
+        #     print(f"l_node: level={l_node.level}, ub={l_node.ub}, v={l_node.v}, w={l_node.w}")
+        #     print(f"r_node: level={r_node.level}, ub={r_node.ub}, v={r_node.v}, w={r_node.w}")
         
-        for child in [l_decision, r_decision]:
-            if is_feasible(child):
-                if len(child) == N_OBJ: # It's a leaf
-                    # Calculate lb
-                    lb = get_lb(child)
-                    if lb > LOWER_BOUND: # Tighter lb # TODO equal to get all the leafs
-                        LOWER_BOUND = lb
-                        if DEBUG:
-                            print("Update lb to " + str(LOWER_BOUND))
-                else:
-                    # Don't put if get_ub([0]) is smaller than lb
-                    ub = get_ub(child)
-                    if ub > LOWER_BOUND: # TODO equal to get all the leafs
-                        PQ.put((-ub, child))
+        # check child
+        for n_child in [l_node, r_node]:
+            # check feasible and worth fathom
+            if n_child.w > C or n_child.ub <= LOWER_BOUND: # TODO I'm not very sure about this 
+                continue
+
+            if n_child.level == N_OBJ-1: # It's a leaf
+                LOWER_BOUND = n_child.ub
+                if DEBUG:
+                    print("Update lb to " + str(LOWER_BOUND))
+            else:
+                n_child.ub = -n_child.ub
+                PQ.put( n_child )
 
     print(LOWER_BOUND)
+    print(time.time() - t_start)

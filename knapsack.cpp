@@ -11,6 +11,7 @@
 #include <cmath> 
 #include <queue>
 using namespace std;
+
 int C = 0;// Capcity
 int N_OBJ = 0; // Number of object
 struct Node{
@@ -109,8 +110,6 @@ double get_ub(Node n){
     cout << val << endl;
     return val;
 }
-
-
 
 int main(void){
     //Load input file 
