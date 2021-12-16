@@ -9,7 +9,7 @@ LOWER_BOUND = -1
 OBJS = []
 CP_OBJS = []
 PQ = PriorityQueue()
-DEBUG = True
+DEBUG = False
 
 def get_ub(decision):
     #  deduce already used obj weight and add value
@@ -20,22 +20,18 @@ def get_ub(decision):
             val += OBJS[i][0]
             cap -= OBJS[i][1]
 
-    #  delete already used obj from cp_arr
-    cp_objs = []
-    for i in CP_OBJS:
-        if (i[0] >= len(decision)):
-            cp_objs.append(i)
-
     # Calcualte fraction knapsnack problem
     idx = 0
-    while(cap > 0 and len(cp_objs) > idx ): # TODO, asssume all objects have weight greate than zero
-        _,v,w,_ = cp_objs[idx]
-        if cap >= w: # Can't take all object
-            val += v
-            cap -= w
-        else: # Can only take partial of object
-            val += (cap/w)*v
-            break
+    while(cap > 0 and len(CP_OBJS) > idx ): # TODO, asssume all objects have weight greate than zero
+        # if already have this decision
+        if (CP_OBJS[idx][0] >= len(decision)):
+            _,v,w,_ = CP_OBJS[idx]
+            if cap >= w: # Can't take all object
+                val += v
+                cap -= w
+            else: # Can only take partial of object
+                val += (cap/w)*v
+                break
         idx += 1
     return val
 
@@ -56,7 +52,6 @@ def is_feasible(decision):
         return False
     else:
         return True
-
 
 if __name__ == "__main__":
     for i, line in enumerate(fileinput.input()):
@@ -100,6 +95,9 @@ if __name__ == "__main__":
                         if DEBUG:
                             print("Update lb to " + str(LOWER_BOUND))
                 else:
-                    PQ.put( (-get_ub(child), child) )
+                    # Don't put if get_ub([0]) is smaller than lb
+                    ub = get_ub(child)
+                    if ub > LOWER_BOUND: # TODO equal to get all the leafs
+                        PQ.put((-ub, child))
 
     print(LOWER_BOUND)
