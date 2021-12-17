@@ -79,12 +79,10 @@ int knapsack(){
 		if(u.level == N-1){
 			continue;
 		}
- 
 		v.level = u.level + 1;
  
 		v.weight = u.weight + items[v.level].weight;
 		v.profit = u.profit + items[v.level].value;
- 
 		if(v.weight <= W && v.profit >= maxprofit){
 			maxprofit = v.profit;
 	//int profit_bound = v.profit;
@@ -99,11 +97,14 @@ int knapsack(){
 		}
  
 		v.bound = bound(v);
- 
 		if(v.bound > maxprofit){
 			QQ.push(v);
 		}
  
+		cout << "fathom_node = (" << u.level << ", " << u.bound << ", " << u.profit << ", " << u.weight << ")" << endl;
+		cout << "l_node = (" << v.level << ", " << v.bound << ", " << v.profit << ", " << v.weight << ")" << endl;
+		cout << (u < v) << endl;
+
 		v.weight = u.weight;
 		v.profit = u.profit;
 		v.bound = bound(v);
