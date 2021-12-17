@@ -14,7 +14,7 @@ DEBUG = False
 
 def get_ub(node):
     v_frac = 0
-    c_frac = C - node.w # Remaid capacity
+    c_frac = C - node.w # Remain capacity
     for i in range(node.level+1, N_OBJ):
         if c_frac >= OBJS[i].w: # Can take this obj all
             c_frac -= OBJS[i].w
@@ -68,7 +68,9 @@ if __name__ == "__main__":
     #     print(f"OBJS = {OBJS}")
     
     PQ.put( Node(-1, -9999999999, 0, 0) )
+    count = 0
     while not PQ.empty():
+        count += 1
         node = PQ.get()
         node.ub = -node.ub # Reverse sign
         
@@ -98,4 +100,5 @@ if __name__ == "__main__":
                 PQ.put( n_child )
 
     print(LOWER_BOUND)
+    print(f"precentage = {count/(2**N_OBJ)}")
     print(time.time() - t_start)
